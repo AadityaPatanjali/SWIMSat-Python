@@ -1,11 +1,12 @@
 # SWIMSat-Python
 Dependencies:
-
+Note: - sudo pip install --ignore-installed --upgrade <name>.whl
 OpenCV - sudo pip install opencv-python
 
 Cython - sudo pip install cython
-numpy - sudo pip install numpy (Install using http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy if you get errors) - sudo pip install --ignore-installed --upgrade <name>.whl
 scipy - sudo pip install scipy (Install using http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy if you get errors) 
+statsmodels - sudo pip install statsmodels (Install using http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy if you get errors)
+numpy - sudo pip install numpy (Install using http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy if you get errors) 
 
 matplotlib - sudo pip install --upgrade matplotlib
 
