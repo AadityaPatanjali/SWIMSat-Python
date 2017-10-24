@@ -1,6 +1,8 @@
 # SWIMSat-Python
 Dependencies:
 
+OpenCV - sudo pip install opencv-python
+
 Cython - sudo pip install cython
 
 scipy - sudo pip install scipy (Install using http://www.lfd.uci.edu/~gohlke/pythonlibs/#scipy if you get errors) 
