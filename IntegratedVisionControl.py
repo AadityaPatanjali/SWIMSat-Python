@@ -32,7 +32,7 @@ class IntegratedVisionControl():
 	def runImage(self):
 		self.vision.main()
 		self.exit = True
-		print "exit = ", self.exit
+		print("exit = ", self.exit)
 		self.arm.__del__()
 
 	def setDelay(self,delay):
@@ -52,7 +52,7 @@ class IntegratedVisionControl():
 				while error<max_error:
 					time.sleep(self.delay)
 					error = self.vision.getError()/100.0
-					print error
+					print(error)
 					if (error[0]==0) and (error[1]==0):
 						homingCount +=1
 						if homingCount >= max_homing_count:
@@ -61,7 +61,7 @@ class IntegratedVisionControl():
 							break
 					pan = self.pan.update(error[0])
 					tilt = self.tilt.update(error[1])
-					# print pan,tilt
+					# print(pan,tilt)
 					if wait:
 						self.tlock.acquire()
 					self.arm.move(pan,tilt,interpolate=False)
@@ -72,7 +72,7 @@ class IntegratedVisionControl():
 
 	def initController(self,args):
 		try:
-			print args
+			print(args)
 			port = args
 			self.arm = PhantomXController(port)
 		except IndexError:

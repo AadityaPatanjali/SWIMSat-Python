@@ -7,6 +7,9 @@ import time
 from scipy.interpolate import *
 import pandas as pd
 from statsmodels.tsa.seasonal import seasonal_decompose
+import matplotlib
+matplotlib.use('TkAgg')
+from cairocffi import *
 from matplotlib import pyplot as plt
 from matplotlib import style
 import os
@@ -141,15 +144,15 @@ class RobotVision():
         Y_T = pd.Series()
         # pts = deque(maxlen=args["buffer"])
 
-        camera = cv2.VideoCapture(1)
+        camera = cv2.VideoCapture(-1)
 
         if camera.isOpened() == False:               # check if VideoCapture object was associated to webcam successfully
-            print "error: camera not accessed successfully\n\n"      # if not, print error message to std out
+            print("error: camera not accessed successfully\n\n")      # if not, print error message to std out
             os.system("pause")                                          # pause until user presses a key so user can see error message
         # end if
-        cv2.namedWindow('Frame',cv2.CV_WINDOW_AUTOSIZE)
-        cv2.namedWindow('Mask',cv2.CV_WINDOW_AUTOSIZE)
-        cv2.startWindowThread()
+        cv2.namedWindow('Frame')
+        cv2.namedWindow('Mask')
+        #cv2.startWindowThread()
         while ((cv2.getWindowProperty('Frame', 0) != -1) or (cv2.getWindowProperty('Mask', 0) != -1)) and cv2.waitKey(1) & 0xFF != ord("q") and camera.isOpened():
             # grab the current frame
             grabbed, frame = camera.read()
@@ -161,8 +164,8 @@ class RobotVision():
 
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             height, width, channels = frame.shape
-            im_x = width/2
-            im_y = height/2
+            im_x = width//2
+            im_y = height//2
             ma_ln=5
             cv2.line(frame, (im_x-ma_ln,im_y-ma_ln), (im_x+ma_ln,im_y+ma_ln), (0,0,255),4)
             cv2.line(frame, (im_x+ma_ln,im_y-ma_ln), (im_x-ma_ln,im_y+ma_ln), (0,0,255),4)

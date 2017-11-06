@@ -62,25 +62,25 @@ class PhantomXController():
 		""" open a serial port """
 		if self.portName == None:
 			self.findPorts()
-			print "\nAvailable ports are:" + str(self.ports) + "\n"
+			print("\nAvailable ports are:" + str(self.ports) + "\n")
 			try:
 				index = int(input('Enter index of desired port from the list(First index is 0): '))
 				self.portName = self.ports[index]
 			except:
-				print "Please select a valid port."
+				print("Please select a valid port.")
 				return
 		try:
 			# print "Opening port: " + self.portName + "\n"
 			# TODO: add ability to select type of driver
 			self.port = Driver(self.portName, self.baud, True) # w/ interpolation
-			print "Setting port: " + self.portName + " @",self.baud, "baud\n"
+			print("Setting port: " + self.portName + " @",self.baud, "baud\n")
 		except:
 			self.port = None
-			print "No valid port selected/found. Please check if the arm is plugged in/if permissions have been set: \nTry:\n sudo chown <your_username> /dev/<desired_port>"
+			print("No valid port selected/found. Please check if the arm is plugged in/if permissions have been set: \nTry:\n sudo chown <your_username> /dev/<desired_port>")
 			return
 	
 	def loadServos(self):
-		print "Reading initial servo values:\n"
+		print("Reading initial servo values:\n")
 		self.servos = np.zeros([self.numServos,2],dtype=np.int)
 		for servo in range(self.numServos):
 			self.servos[servo] = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
@@ -107,11 +107,11 @@ class PhantomXController():
 	def doRelax(self):
 		""" Relax servos so you can pose them. """
 		if self.port != None:
-			print "PyPose: relaxing servos..."
+			print("PyPose: relaxing servos...")
 			for servo in range(self.numServos):
 				self.port.setReg(servo+1,P_TORQUE_ENABLE, [0,])
 		else:
-			print "Port not selected."
+			print("Port not selected.")
 			self.doPort()
 
 	def relaxServos(self):
@@ -142,10 +142,10 @@ class PhantomXController():
 
 	def moveWithInterpolation(self,pose):
 		# set pose size -- IMPORTANT!
-		print "Setting pose size at "+str(self.numServos)
+		print("Setting pose size at "+str(self.numServos))
 		self.port.execute(253, 7, [self.numServos])
 		# download the pose
-		print "\n\n\n\n\n\n",pose
+		print("\n\n\n\n\n\n",pose)
 		self.port.execute(253, 8, [0] + pose)
 		self.port.execute(253, 9, [0, self.deltaT%256,self.deltaT>>8,255,0,0])
 		self.port.execute(253, 10, list())
@@ -154,13 +154,13 @@ class PhantomXController():
 	# Pose Manipulation
 	def setPose(self,pose,interpolate=True):
 		if interpolate:
-			# print self.servos[1]
+			# print(self.servos[1])
 			# for servo in range(self.numServos):
 			# 	self.port.setReg(servo+1, P_GOAL_POSITION_L, self.servos[servo,:].tolist())
 			self.enableServos()
 			self.port.interpolate = True
 			flat_pose = [item for sublist in pose for item in sublist]
-			print "Moving slowly", flat_pose
+			print("Moving slowly", flat_pose)
 			self.moveWithInterpolation(flat_pose)
 		else:	
 			for servo in range(self.numServos):
@@ -187,21 +187,21 @@ class PhantomXController():
 		# Pan and Tilt are in degrees
 		self.getPose()
 		poseInit = self.convertToAngles()
-		print "Initial angles: ",poseInit
+		print("Initial angles: ",poseInit)
 		poseFinal = np.zeros(self.numServos,dtype=np.int)
 		poseFinal[self.panIdx] = pan
 		poseFinal[self.tiltIdx] = tilt
 		poseFinal[self.gripperIdx] = gripper
 		poseFinal = poseFinal + self.convertToAngles()
-		print "  Final angles: ",poseFinal
+		print("  Final angles: ",poseFinal)
 		time.sleep(5)
 		if self.checkPoseValid(poseFinal):
 			self.setPose(self.convertToPose(poseFinal),interpolate)
 		else:
-			print "Pose out of bounds"
+			print("Pose out of bounds")
 
 	def returnHome(self,interpolate=True):
-		print "Returning to Home Position"
+		print("Returning to Home Position")
 		self.setPoseInAngles(self.homePose,interpolate)
 
 	def setHomePose(self,interpolate = True):
@@ -210,18 +210,18 @@ class PhantomXController():
 			try:
 				self.getPose()
 				pose = self.convertToAngles()
-				print (pose)
+				print(pose)
 				time.sleep(0.5)
 			except KeyboardInterrupt:
 				break
-		print "Setting home position to:",pose
+		print("Setting home position to:",pose)
 		inp = raw_input("Ok? Y/N:").lower()
 		if inp == "y":
 			self.setPose(self.convertToPose(pose),interpolate)
 			file = open('HomePose','w')
 			file.write(str(pose))
 			file.close()
-			print "Home position set!"
+			print("Home position set!")
 			return
 		elif inp == "n":
 			self.setHomePose(interpolate)
@@ -236,27 +236,27 @@ class PhantomXController():
 				line = file.read()
 				self.homePose = np.int_(line.strip('[]').split(','))
 			except IOError:
-				print "Home Position not set yet.\n"
+				print("Home Position not set yet.\n")
 				self.setHomePose()
 				return
 			except ValueError:
 				self.homePose = np.array(line.strip('[]').split()).astype(np.float)
-		print "Home Position is: ", self.homePose
-		inp = raw_input("Do you want to move to home pos? Y/N:").lower()
+		print("Home Position is: ", self.homePose)
+		inp = input("Do you want to move to home pos? Y/N:").lower()
 		if inp == 'y':
-			print "Setting To Home Position"
+			print("Setting To Home Position")
 			self.setPoseInAngles(self.homePose,interpolate)
 		elif inp == 'n':
-			inp = raw_input("Do you want reset the home pos? Y/N:").lower()
+			inp = input("Do you want reset the home pos? Y/N:").lower()
 			while inp == 'y':
 				if inp == 'y':
 					self.setHomePose()
 					return
 				elif inp == 'n':
-					print "Goodbye!"
+					print("Goodbye!")
 					break
 				else:
-					inp = raw_input("Do you want reset the home pos? Y/N:").lower()
+					inp = input("Do you want reset the home pos? Y/N:").lower()
 		else:
 			self.getHomePose(interpolate)
 
