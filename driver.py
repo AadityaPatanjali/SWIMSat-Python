@@ -28,12 +28,11 @@ from ax12 import *
 class Driver:
     """ Class to open a serial port and control AX-12 servos 
     through an arbotiX board or USBDynamixel. """
-    def __init__(self, port="/dev/ttyUSB0",baud=38400, interpolation=False, direct=False):
+    def __init__(self, port="COM3",baud=38400, interpolation=False, direct=False):
         """ This may throw errors up the line -- that's a good thing. """
         self.ser = serial.Serial()
         self.ser.baudrate = baud
         self.ser.port = port
-        self.ser.bytesize = serial.EIGHTBITS
         self.ser.timeout = 0.5
         self.ser.open()
         self.error = 0
@@ -50,13 +49,10 @@ class Driver:
         self.ser.flushInput()
         length = 2 + len(params)
         checksum = 255 - ((index + length + ins + sum(params))%256)
-        out = chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(ins)
-        self.ser.write(bytes(out,'utf8') )
+        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(ins))
         for val in params:
-            out3 = chr(val)
-            self.ser.write(bytes(out3,'utf8') )
-        out4 = chr(checksum)
-        self.ser.write(bytes(out4,'utf8') )
+            self.ser.write(chr(val))
+        self.ser.write(chr(checksum))
         return self.getPacket(0)
 
     def setReg(self, index, regstart, values  ):
@@ -68,49 +64,47 @@ class Driver:
     def getPacket(self, mode, id=-1, leng=-1, error=-1, params = None  ):
         """ Read a return packet, iterative attempt """
         # need a positive byte
-        d_pos = self.ser.read()
-        print(d_pos)
-        d = (d_pos).decode()
+        d = self.ser.read()
         if d == '': 
             if self.display:
-                print("Fail Read")
+                print "Fail Read"
             return None
 
         # now process our byte
         if mode == 0:           # get our first 0xFF
             if ord(d) == 0xff:   
                 if self.display: 
-                    print("Oxff found")
+                    print "Oxff found"
                 return self.getPacket(1)
             else:
                 if self.display: 
-                    print("Oxff NOT found, restart: " + str(ord(d)))
+                    print "Oxff NOT found, restart: " + str(ord(d))
                 return self.getPacket(0)
         elif mode == 1:         # get our second 0xFF
             if ord(d) == 0xff:
                 if self.display:
-                    print("Oxff found")
+                    print "Oxff found"
                 return self.getPacket(2)
             else:
                 if self.display:
-                    print("Oxff NOT found, restart: " + str(ord(d)))
+                    print "Oxff NOT found, restart: " + str(ord(d))
                 return self.getPacket(0)
         elif mode == 2:         # get id
             if d != 0xff:
                 if self.display:
-                    print("ID found: " + str(ord(d)))
+                    print "ID found: " + str(ord(d))
                 return self.getPacket(3, ord(d))
             else:              
                 if self.display:
-                    print("0xff is not ID, restart")
+                    print "0xff is not ID, restart"
                 return self.getPacket(0)
         elif mode == 3:         # get length
             if self.display:
-                print("Length found: " + str(ord(d)))
+                print "Length found: " + str(ord(d))
             return self.getPacket(4, id, ord(d))
         elif mode == 4:         # read error    
             if self.display:
-                print("Error level found: " + str(ord(d)))
+                print "Error level found: " + str(ord(d))
             self.error = ord(d)
             if leng == 2:
                 return self.getPacket(6, id, leng, ord(d), list())
@@ -118,7 +112,7 @@ class Driver:
                 return self.getPacket(5, id, leng, ord(d), list())
         elif mode == 5:         # read params
             if self.display:
-                print("Parameter found: " + str(ord(d)))
+                print "Parameter found: " + str(ord(d))
             params.append(ord(d))
             if len(params) + 2 == leng:
                 return self.getPacket(6, id, leng, error, params)
@@ -126,13 +120,13 @@ class Driver:
                 return self.getPacket(5, id, leng, error, params)
         elif mode == 6:         # read checksum
             if self.display:
-                print("Checksum found: " + str(ord(d)))
+                print "Checksum found: " + str(ord(d))
             checksum = id + leng + error + sum(params) + ord(d)
             if self.display:
-                print("Checksum computed: " + str(checksum))
+                print "Checksum computed: " + str(checksum)
             if checksum % 256 != 255:
                 if self.display:
-                    print("Checksum ERROR")
+                    print "Checksum ERROR"
                 return None
             return params
         # fail
@@ -144,7 +138,7 @@ class Driver:
         vals = self.execute(index, AX_READ_DATA, [regstart, rlength])
         if vals == None:
             if self.display:
-                print("Read Failed: Servo ID = " + str(index))
+                print "Read Failed: Servo ID = " + str(index)
             return -1        
         if rlength == 1:
             return vals[0]
@@ -161,13 +155,10 @@ class Driver:
             valsum = valsum + sum(i)
         checksum = 255 - ((254 + length + AX_SYNC_WRITE + regstart + len(vals[0]) - 1 + valsum)%256)
         # packet: FF FF ID LENGTH INS(0x03) PARAM .. CHECKSUM
-        out1 = chr(0xFF)+chr(0xFF)+chr(0xFE)+chr(length)+chr(AX_SYNC_WRITE)+chr(regstart)+chr(len(vals[0])-1)
-        self.ser.write(bytes(out1,'utf8') )
+        self.ser.write(chr(0xFF)+chr(0xFF)+chr(0xFE)+chr(length)+chr(AX_SYNC_WRITE)+chr(regstart)+chr(len(vals[0])-1))
         for servo in vals:
             for value in servo:
-                out2 = chr(value)
-                self.ser.write(bytes(out2,'utf8') )
-        out5 = chr(checksum)
-        self.ser.write(bytes(out5,'utf8') )
+                self.ser.write(chr(value))
+        self.ser.write(chr(checksum))
         # no return info...
 

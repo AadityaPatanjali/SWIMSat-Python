@@ -9,10 +9,11 @@ from PID import PID
 
 class IntegratedVisionControl():
 
-	def __init__(self,delay=0.01,P=5.0,I=0.4,D=0.2,args='/dev/ttyUSB0'):
+	def __init__(self,delay=0.01,P=5.0,I=0.4,D=0.2,args=None):
 		self.tlock = threading.Lock()
 		self.vision = RobotVision()
 		self.initController(args)
+		self.arm.setDisplay(False)
 		self.threadImage = Thread(target=self.runImage)
 		self.curr_time = None
 		self.setDelay(delay)
@@ -21,9 +22,10 @@ class IntegratedVisionControl():
 		self.exit = False
 		self.thread = Thread(target=self.run)
 		# self.threadImage.start()
-		# print('ThreadImage executed')
 		self.thread.start()
 		self.runImage()
+		# print('ThreadImage executed')
+		print('Thread Executed')
 
 	def __del__(self):
 		print('Goodbye!')
@@ -32,7 +34,7 @@ class IntegratedVisionControl():
 	def runImage(self):
 		self.vision.main()
 		self.exit = True
-		print("exit = ", self.exit)
+		print "exit = ", self.exit
 		self.arm.__del__()
 
 	def setDelay(self,delay):
@@ -52,7 +54,7 @@ class IntegratedVisionControl():
 				while error<max_error:
 					time.sleep(self.delay)
 					error = self.vision.getError()/100.0
-					print(error)
+					print error
 					if (error[0]==0) and (error[1]==0):
 						homingCount +=1
 						if homingCount >= max_homing_count:
@@ -61,22 +63,20 @@ class IntegratedVisionControl():
 							break
 					pan = self.pan.update(error[0])
 					tilt = self.tilt.update(error[1])
-					# print(pan,tilt)
+					# print pan,tilt
 					if wait:
 						self.tlock.acquire()
 					self.arm.move(pan,tilt,interpolate=False)
 					if wait:
 						self.tlock.release()
-			except KeyboardInterrupt:
+			except (KeyboardInterrupt, SystemExit):
 				return
 
 	def initController(self,args):
-		try:
-			print(args)
-			port = args
-			self.arm = PhantomXController(port)
-		except IndexError:
+		if args==None:
 			self.arm = PhantomXController()
+		else:
+			self.arm = PhantomXController(port=args)
 		try:
 			self.arm.getHomePose()
 
@@ -84,5 +84,8 @@ class IntegratedVisionControl():
 			print('...\nExiting')
 
 if __name__=='__main__':
-	system = IntegratedVisionControl(args=sys.argv[1])
+	try:
+		system = IntegratedVisionControl(args=sys.argv[1])
+	except:
+		system = IntegratedVisionControl()
 	system.thread.join()
