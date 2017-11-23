@@ -1,0 +1,5 @@
+Dependencies:
+Cython - sudo pip install cython
+scipy - sudo pip install scipy
+matplotlib - sudo pip install --upgrade matplotlib
+statsmodels - library files
