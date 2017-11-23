@@ -152,7 +152,7 @@ class PhantomXController():
 
 	###########################################################################
 	# Pose Manipulation
-	def setPose(self,pose,interpolate=True):
+	def setPose(self,pose,interpolate=False):
 		if interpolate:
 			# print self.servos[1]
 			# for servo in range(self.numServos):
@@ -166,11 +166,11 @@ class PhantomXController():
 			for servo in range(self.numServos):
 				self.port.setReg(servo+1, P_GOAL_POSITION_L, pose[servo].tolist())
 
-	def setPoseInAngles(self,pose,interpolate=True):
+	def setPoseInAngles(self,pose,interpolate=False):
 		self.setPose(self.convertToPose(pose),interpolate)
 
 	def getPose(self):  
-		""" Downloads the current pose from the robot to the GUI. """
+		""" Downloads the current pose from the robot. """
 		# errors = "could not read servos: "
 		# errCount = 0.0
 		self.port.setDisplay(False)
@@ -181,7 +181,7 @@ class PhantomXController():
 		# deltaT is in ms
 		self.deltaT = deltaT
 
-	def move(self,pan,tilt,gripper = 0,interpolate=True):
+	def move(self,pan,tilt,gripper = 0,interpolate=False):
 		if (abs(pan)<self.min_move) | (abs(tilt)<self.min_move):
 			return
 		# Pan and Tilt are in degrees
@@ -200,11 +200,11 @@ class PhantomXController():
 		else:
 			print "Pose out of bounds"
 
-	def returnHome(self,interpolate=True):
+	def returnHome(self,interpolate=False):
 		print "Returning to Home Position"
 		self.setPoseInAngles(self.homePose,interpolate)
 
-	def setHomePose(self,interpolate = True):
+	def setHomePose(self,interpolate = False):
 		self.relaxServos()
 		while True:
 			try:
@@ -229,7 +229,7 @@ class PhantomXController():
 		else:
 			self.setHomePose(interpolate)
 
-	def getHomePose(self,interpolate = True):
+	def getHomePose(self,interpolate = False):
 		# self.relaxServos()
 		if self.homePose == None:
 			try:
