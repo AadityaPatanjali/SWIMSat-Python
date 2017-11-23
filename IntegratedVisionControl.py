@@ -79,7 +79,7 @@ class IntegratedVisionControl():
 					if wait:
 						self.tlock.release()
 				err = error[2]
-				pe = np.concatenate((error,[0]))
+				pe = np.concatenate((error[0:2],[0,1]))
 				theta = self.arm.convertToAngles()
 				pe_base = np.array(np.dot(self.transformer.Te0(theta[0:4]),pe))
 				pe_base = [int(ele) for ele in np.concatenate((pe_base[0,0:2],[err]))]
