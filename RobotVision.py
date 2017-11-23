@@ -16,10 +16,7 @@ class RobotVision():
         style.use('fivethirtyeight')
         self.X_er = 0
         self.Y_er = 0
-<<<<<<< HEAD
         self.contour = False
-=======
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
     ## This Code tracks the trajectory based on a polynomial regression
 
     ## Custom Functions:
@@ -118,17 +115,12 @@ class RobotVision():
         # # Hand night
         # greenLower = (0,79,95)
         # greenUpper = (29,161,255)
-<<<<<<< HEAD
         # greenUpper = (0,89,109)
         # greenLower = (45,205,230)
         # greenLower = (0,0,235)
         # greenUpper = (55,22,255)
         greenLower = (0,0,254)
         greenUpper = (172,14,255)
-=======
-        greenUpper = (0,89,109)
-        greenLower = (45,205,230)
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
         Traj_hist = deque()
         try:
             pts = deque(maxlen=args["buffer"])
@@ -214,7 +206,6 @@ class RobotVision():
 
                 tim = None
                 tr_fl = False
-<<<<<<< HEAD
                 # Did not detect any contours, then set error to 0
                 self.contour = False
                 self.X_er = 0
@@ -223,11 +214,6 @@ class RobotVision():
             t0 = time.time()
             if len(cnts) > 0:
                 self.contour = True
-=======
-            # only proceed if at least one contour was found
-            t0 = time.time()
-            if len(cnts) > 0:
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
                 c = max(cnts, key=cv2.contourArea)
                 #for c in cnts:
                 (x,y,w,h) = cv2.boundingRect(c)
@@ -258,10 +244,7 @@ class RobotVision():
                             tr_fl = False    
                 self.X_er = X_des - im_x
                 self.Y_er = Y_des - im_y
-<<<<<<< HEAD
                 # print(self.X_er,self.Y_er)
-=======
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 
                 
                 dt = time.time()-t
@@ -274,14 +257,7 @@ class RobotVision():
                     break
             except:
                     break
-<<<<<<< HEAD
 
-=======
-            # # Did not detect any contours, then set error to 0
-            else:
-                self.X_er = 0
-                self.Y_er = 0
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 
         print("Releasing camera")         
         # cleanup the camera and close any open windows
@@ -294,13 +270,9 @@ class RobotVision():
         print('Exiting RobotVision!')
 
     def getError(self):
-<<<<<<< HEAD
         er = [self.X_er,self.Y_er,self.contour]
         # print er
         return np.array(er)
-=======
-        return np.array([self.X_er,self.Y_er])
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 
 if __name__=='__main__':
     vision = RobotVision()

@@ -6,8 +6,7 @@ def main():
 	line = file.read()
 	file.close()
 	var = np.int_([ele.rstrip('])') for ele in [ele.strip(' array([') for ele in (line.strip('[]').split(','))]])
-	var_len = len(var)/3
-	print(var_len)
+	var_len = int(len(var)/3)
 	var_new = (var.reshape(var_len,3))[:,0:2]
 	plt.plot(range(var_len),var_new)
 	plt.axis([0,var_len,np.min(var_new),np.max(var_new)])

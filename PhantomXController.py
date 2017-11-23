@@ -142,11 +142,7 @@ class PhantomXController():
 
 	def moveWithInterpolation(self,pose):
 		# set pose size -- IMPORTANT!
-<<<<<<< HEAD
 		print "Setting pose size yo "+str(self.numServos)
-=======
-		print "Setting pose size at "+str(self.numServos)
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 		self.port.execute(253, 7, [self.numServos])
 		# download the pose
 		print "\n\n\n\n\n\n",pose
@@ -191,23 +187,14 @@ class PhantomXController():
 		# Pan and Tilt are in degrees
 		self.getPose()
 		poseInit = self.convertToAngles()
-<<<<<<< HEAD
 		# print "Initial angles: ",poseInit
-=======
-		print "Initial angles: ",poseInit
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 		poseFinal = np.zeros(self.numServos,dtype=np.int)
 		poseFinal[self.panIdx] = pan
 		poseFinal[self.tiltIdx] = tilt
 		poseFinal[self.gripperIdx] = gripper
 		poseFinal = poseFinal + self.convertToAngles()
-<<<<<<< HEAD
 		# print "  Final angles: ",poseFinal
 		# time.sleep(5)
-=======
-		print "  Final angles: ",poseFinal
-		time.sleep(5)
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 		if self.checkPoseValid(poseFinal):
 			self.setPose(self.convertToPose(poseFinal),interpolate)
 		else:
@@ -234,10 +221,7 @@ class PhantomXController():
 			file = open('HomePose','w')
 			file.write(str(pose))
 			file.close()
-<<<<<<< HEAD
 			self.homePose = pose
-=======
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 			print "Home position set!"
 			return
 		elif inp == "n":
@@ -281,10 +265,7 @@ class PhantomXController():
 		self.setPoseInAngles(np.zeros(5))
 
 	def __del__(self):
-<<<<<<< HEAD
 		self.setPoseInAngles(self.homePose,False)
-=======
->>>>>>> 3c36b60f28de06c8ca55270c4f1fbb93adbd35ab
 		print('Exiting PhantomXController!')
 		# self.relaxServos()
 
