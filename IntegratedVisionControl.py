@@ -30,11 +30,6 @@ class IntegratedVisionControl():
 		self.runImage()
 
 	def __del__(self):
-		print('Goodbye!')
-		sys.exit()
-
-	def runImage(self):
-		self.vision.main()
 		self.exit = True
 		print "exit = ", self.exit
 		file = open('Response.txt','w')
@@ -44,6 +39,12 @@ class IntegratedVisionControl():
 		file.write(str(self.out2))
 		file.close()
 		self.arm.__del__()
+		print('Goodbye!')
+		sys.exit()
+
+	def runImage(self):
+		self.vision.main()
+		self.__del__()
 
 	def setDelay(self,delay):
 		self.delay = delay
@@ -54,7 +55,6 @@ class IntegratedVisionControl():
 		max_homing_count = 1000
 		while True:
 			if self.exit:
-				self.arm.returnHome(interpolate=False)
 				self.__del__()
 				break
 			try:
@@ -85,6 +85,7 @@ class IntegratedVisionControl():
 				pe_base = [int(ele) for ele in np.concatenate((pe_base[0,0:2],[err]))] 
 				self.out2.append(pe_base)
 			except KeyboardInterrupt:
+				self.__del__()
 				return
 
 	def initController(self,args):
@@ -101,5 +102,8 @@ class IntegratedVisionControl():
 			print('...\nExiting')
 
 if __name__=='__main__':
-	system = IntegratedVisionControl(args=sys.argv[1])
+	try:
+		system = IntegratedVisionControl(args=sys.argv[1])
+	except:
+		system = IntegratedVisionControl(args=None)
 	system.thread.join()

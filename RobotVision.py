@@ -11,6 +11,46 @@ from matplotlib import pyplot as plt
 from matplotlib import style
 import os
 
+class Transformation():
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.a = 0 # angle
+    def add(self,A,B):
+        C = Transformation()    
+        try:
+            C.x = A.x+B.x
+            C.y = A.y+B.y
+            C.a = A.a+B.a
+        except:
+            C.x = A.x + B
+            C.y = A.y + B
+            C.a = A.a
+        return C
+    def mul(self,A,B):
+        C = Transformation()    
+        try:
+            C.x = A.x*B.x
+            C.y = A.y*B.y
+            C.a = A.a*B.a
+        except:
+            C.x = A.x * B
+            C.y = A.y * B
+            C.a = A.a
+        return C
+    def neg(self,A):
+        C = Transformation()
+        C.x = -A.x
+        C.y = -A.y
+        C.a = -A.a
+        return C
+    def inv(self,A):
+        C = Transformation()
+        C.x = 1/A.x
+        C.y = 1/A.y
+        C.a = -A.a
+        return C
+
 class RobotVision():
     def __init__(self):
         style.use('fivethirtyeight')
@@ -84,7 +124,6 @@ class RobotVision():
         X_Set = seasonal_decompose(X_Current, model='additive', freq = 13)
         Y_Set = seasonal_decompose(Y_Current, model='additive', freq = 13)
         return X_Set, Y_Set, Time_set_fin
-    
 
     def main(self):
         #greenLower = (0, 119, 0)

@@ -14,7 +14,8 @@ class PhantomXController():
 		self.portName = port
 		self.baud = 38400
 		self.numServos = 5
-		self.min_move = 0.1
+		self.errCount = 0
+		self.min_move = 0.1 # Minimum servo angle to movement in radians
 		np.set_printoptions(precision=2)
 		self.doPort()
 		self.loadServos()
@@ -154,7 +155,6 @@ class PhantomXController():
 	###########################################################################
 	# Pose Manipulation
 	def setPose(self,pose,interpolate=False):
-		print 'Pose is: ',pose, '\n Pose in angles is:',self.convertToAngles(pose)
 		if interpolate:
 			# print self.servos[1]
 			# for servo in range(self.numServos):
@@ -176,8 +176,14 @@ class PhantomXController():
 		# errors = "could not read servos: "
 		# errCount = 0.0
 		self.port.setDisplay(False)
-		for servo in range(self.numServos):
-			self.servos[servo,:] = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
+		try:
+			for servo in range(self.numServos):
+				self.servos[servo,:] = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
+		except ValueError:
+			self.errCount +=1
+			if self.errCount >5: raise ValueError
+			self.getPose()
+
 
 	def setInterpolation(self,deltaT=500):
 		# deltaT is in ms
@@ -195,12 +201,18 @@ class PhantomXController():
 		poseFinal[self.tiltIdx] = tilt
 		poseFinal[self.gripperIdx] = gripper
 		poseFinal = poseFinal + self.convertToAngles()
-		print "  Final angles: ",poseFinal
 		# time.sleep(5)
-		if self.checkPoseValid(poseFinal):
-			self.setPose(self.convertToPose(poseFinal),interpolate)
-		else:
-			print "Pose out of bounds"
+		try:
+			if self.checkPoseValid(poseFinal):
+				self.setPose(self.convertToPose(poseFinal),interpolate)
+			else:
+				print "Pose out of bounds"
+		except Exception as e:
+			print '!!!!!!!!!Something went horribly wrong!\n',e
+			print self.servos
+			print 'Initial pose:',poseInit
+			print '  Final pose:',poseFinal
+		
 
 	def returnHome(self,interpolate=False):
 		print "Returning to Home Position"
@@ -267,7 +279,11 @@ class PhantomXController():
 		self.setPoseInAngles(np.zeros(5))
 
 	def __del__(self):
-		self.setPoseInAngles(self.homePose,False)
+		try:
+			self.setPoseInAngles(self.homePose,False)
+		except Exception as e:
+			print('Raised Exception:'),e
+			pass
 		print('Exiting PhantomXController!')
 		# self.relaxServos()
 

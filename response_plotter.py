@@ -34,7 +34,7 @@ def main():
 
 	f.show()
 	f2.show()
-	input()
+	raw_input()
 
 if __name__ == '__main__':
 	main()
