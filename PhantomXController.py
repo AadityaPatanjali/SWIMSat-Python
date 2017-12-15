@@ -123,9 +123,10 @@ class PhantomXController():
 		for servo in range(self.numServos):
 			self.port.setReg(servo+1,P_TORQUE_ENABLE, [1,])
 
-	def convertToAngles(self):
+	def convertToAngles(self,servos = None):
+		servos = self.servos if servos is None else servos
 		values = np.zeros(self.numServos,dtype=np.int)
-		for servo,val in zip(self.servos,range(self.numServos)):
+		for servo,val in zip(servos,range(self.numServos)):
 			values[val] = servo[0]+servo[1]*256
 		values = values/1024.0*360.0-180.0
 		return values
@@ -153,6 +154,7 @@ class PhantomXController():
 	###########################################################################
 	# Pose Manipulation
 	def setPose(self,pose,interpolate=False):
+		print 'Pose is: ',pose, '\n Pose in angles is:',self.convertToAngles(pose)
 		if interpolate:
 			# print self.servos[1]
 			# for servo in range(self.numServos):
@@ -193,7 +195,7 @@ class PhantomXController():
 		poseFinal[self.tiltIdx] = tilt
 		poseFinal[self.gripperIdx] = gripper
 		poseFinal = poseFinal + self.convertToAngles()
-		# print "  Final angles: ",poseFinal
+		print "  Final angles: ",poseFinal
 		# time.sleep(5)
 		if self.checkPoseValid(poseFinal):
 			self.setPose(self.convertToPose(poseFinal),interpolate)
@@ -235,13 +237,13 @@ class PhantomXController():
 			try:
 				file = open("HomePose",'r')
 				line = file.read()
-				self.homePose = np.int_(line.strip('[]').split(','))
+				self.homePose = np.int_(line.strip('[]').rstrip('\n').rstrip(' ').rstrip(']').split(','))
 			except IOError:
 				print "Home Position not set yet.\n"
 				self.setHomePose()
 				return
 			except ValueError:
-				self.homePose = np.array(line.strip('[]').split()).astype(np.float)
+				self.homePose = np.array(line.strip('[]').rstrip('\n').rstrip(' ').rstrip(']').split()).astype(np.float)
 		print "Home Position is: ", self.homePose
 		inp = raw_input("Do you want to move to home pos? Y/N:").lower()
 		if inp == 'y':

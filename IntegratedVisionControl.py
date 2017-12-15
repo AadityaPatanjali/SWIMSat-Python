@@ -79,10 +79,10 @@ class IntegratedVisionControl():
 					if wait:
 						self.tlock.release()
 				err = error[2]
-				pe = np.concatenate((error[0:2],[0,1]))
+				pe = np.concatenate((error[0:2],[0,1])) # Considering coordinates in camera view as real world coordinates. Fix it!
 				theta = self.arm.convertToAngles()
 				pe_base = np.array(np.dot(self.transformer.Te0(theta[0:4]),pe))
-				pe_base = [int(ele) for ele in np.concatenate((pe_base[0,0:2],[err]))]
+				pe_base = [int(ele) for ele in np.concatenate((pe_base[0,0:2],[err]))] 
 				self.out2.append(pe_base)
 			except KeyboardInterrupt:
 				return
