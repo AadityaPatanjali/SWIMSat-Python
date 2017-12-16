@@ -15,7 +15,8 @@ Install the following dependencies:
 sudo pip install numpy opencv-python
 sudo pip install --upgrade matplotlib
 sudo pip install cython
-sudo pip install scipy statsmodels```
+sudo pip install scipy statsmodels
+```
 
 Note: If any of the above libraries don't get installed on Windows, use [Gohlke's Unofficial Windows Binaries for Python Packages](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
 
