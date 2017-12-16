@@ -36,7 +36,8 @@ cd SWIMSat-Python
   - If the port is not known, run 
 ```
 python IntegratedVisionController.py
-``` to find out the port.
+``` 
+to find out the port.
 - Own the port by using Eg. 
 ```
 sudo chown <username> /dev/ttyUSB0``` or ```sudo chmod +x /dev/ttyUSB0```
@@ -46,10 +47,12 @@ sudo chown <username> /dev/ttyUSB0``` or ```sudo chmod +x /dev/ttyUSB0```
 - Threshold of objects can be set by running the range_detector by using 
 ```
 python range_detector.py --filter HSV --webcam
-``` or by modifying the 'Image Threshold' file. Open it in any text editor, but don't modify the syntax. Syntax is 
+``` 
+or by modifying the 'Image Threshold' file. Open it in any text editor, but don't modify the syntax. Syntax is 
 ```
 [H_upper,S_upper,V_upper,H_lower,S_lower,V_lower]
-``` where H, S and, V stand for Hue, Saturation and, Value respectively.
+``` 
+where H, S and, V stand for Hue, Saturation and, Value respectively.
 - To close the program, 
   - Close Frame, if in a linux machine.
   - Press q while the Frame window is active, if in a windows machine
