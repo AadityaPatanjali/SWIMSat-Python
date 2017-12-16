@@ -39,11 +39,7 @@ python IntegratedVisionController.py
 ``` 
 to find out the port.
 - Own the port by using Eg. ```sudo chown <username> /dev/ttyUSB0``` or ```sudo chmod +x /dev/ttyUSB0```
-- Run 
-```
-python IntegratedVisionController.py <port>
-``` 
-replacing <port> by the appropriate port.
+- Run ```python IntegratedVisionController.py <port>``` replacing <port> by the appropriate port.
 - A question will pop up to move to the Home Position. If the answer is no, you can reset the Home position (Use Ctrl + C to select a home position), automatically saving the new position.
 - You will see two windows, Frame and Mask.
 - Threshold of objects can be set by running the range_detector by using 
