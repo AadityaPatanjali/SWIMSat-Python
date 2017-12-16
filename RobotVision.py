@@ -158,8 +158,14 @@ class RobotVision():
         # greenLower = (45,205,230)
         # greenLower = (0,0,235)
         # greenUpper = (55,22,255)
-        greenLower = (0,0,254)
-        greenUpper = (172,14,255)
+        file = open('Image Threshold','r')
+        line = file.read()
+        try:
+            thresh = np.int_(line.strip('[]').rstrip('\n').rstrip(' ').rstrip(']').split(','))
+        except:
+            thresh = np.int_(line.strip('[]').rstrip('\n').rstrip(' ').rstrip(']').split())
+        threshLower = np.array(thresh[0:3])
+        threshUpper = np.array(thresh[3:6])
         Traj_hist = deque()
         try:
             pts = deque(maxlen=args["buffer"])
@@ -214,7 +220,7 @@ class RobotVision():
             # construct a mask for the color "green", then perform
             # a series of dilations and erosions to remove any small
             # blobs left in the mask
-            mask = cv2.inRange(hsv, greenLower, greenUpper)
+            mask = cv2.inRange(hsv, threshLower, threshUpper)
             mask = cv2.erode(mask, None, iterations=3)
             mask = cv2.dilate(mask, None, iterations=3)
 

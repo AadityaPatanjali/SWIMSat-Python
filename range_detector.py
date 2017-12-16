@@ -10,6 +10,7 @@
 import cv2
 import argparse
 from operator import xor
+import numpy as np
 
 
 def callback(value):
@@ -101,7 +102,12 @@ def main():
 
         if cv2.waitKey(1) & 0xFF is ord('q'):
             break
-
+    yes = raw_input('Do you want to save the threshold values? y/n:').lower()
+    if yes != 'y': return
+    line = np.array([v1_min, v2_min, v3_min, v1_max, v2_max, v3_max])
+    file = open('Image Threshold','w')
+    file.write(str(line))
+    file.close()
 
 if __name__ == '__main__':
     main()
