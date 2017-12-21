@@ -107,7 +107,7 @@ class PhantomXController():
 
 	def doRelax(self):
 		""" Relax servos so you can pose them. """
-		if self.port != None:
+		if self.portName != None:
 			print "PyPose: relaxing servos..."
 			for servo in range(self.numServos):
 				self.port.setReg(servo+1,P_TORQUE_ENABLE, [0,])
@@ -288,10 +288,10 @@ class PhantomXController():
 		# self.relaxServos()
 
 if __name__=='__main__':
-	try:
+	if sys.argv[1] != None:
 		port = sys.argv[1]
 		arm = PhantomXController(port)
-	except IndexError:
+	else:
 		arm = PhantomXController()
 	try:
 		arm.getHomePose()

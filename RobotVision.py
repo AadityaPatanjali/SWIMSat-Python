@@ -11,13 +11,13 @@ from matplotlib import pyplot as plt
 from matplotlib import style
 import os
 
-class Transformation():
-    def __init__(self):
-        self.x = 0
-        self.y = 0
-        self.a = 0 # angle
+class Trajectory():
+    def __init__(self,x=0,y=0,a=0):
+        self.x = x
+        self.y = y
+        self.a = a # angle
     def add(self,A,B):
-        C = Transformation()    
+        C = Trajectory()    
         try:
             C.x = A.x+B.x
             C.y = A.y+B.y
@@ -28,7 +28,7 @@ class Transformation():
             C.a = A.a
         return C
     def mul(self,A,B):
-        C = Transformation()    
+        C = Trajectory()    
         try:
             C.x = A.x*B.x
             C.y = A.y*B.y
@@ -39,13 +39,13 @@ class Transformation():
             C.a = A.a
         return C
     def neg(self,A):
-        C = Transformation()
+        C = Trajectory()
         C.x = -A.x
         C.y = -A.y
         C.a = -A.a
         return C
     def inv(self,A):
-        C = Transformation()
+        C = Trajectory()
         C.x = 1/A.x
         C.y = 1/A.y
         C.a = -A.a
@@ -126,8 +126,6 @@ class RobotVision():
         return X_Set, Y_Set, Time_set_fin
 
     def main(self):
-        #greenLower = (0, 119, 0)
-        #greenUpper = (5, 255, 255)
         ct = 0
         c = 0
         t = 0
@@ -146,18 +144,6 @@ class RobotVision():
 
         X_las = None
         Y_las = None
-        #greenLower = (73, 59,126)
-        #greenUpper = (91, 226, 255)
-        # Vision Papameters
-        # greenLower = (102, 155,105)
-        # greenUpper = (119, 255, 255)
-        # # Hand night
-        # greenLower = (0,79,95)
-        # greenUpper = (29,161,255)
-        # greenUpper = (0,89,109)
-        # greenLower = (45,205,230)
-        # greenLower = (0,0,235)
-        # greenUpper = (55,22,255)
         file = open('Image Threshold','r')
         line = file.read()
         try:
@@ -197,13 +183,18 @@ class RobotVision():
             print "error: camera not accessed successfully\n\n"      # if not, print error message to std out
             os.system("pause")                                          # pause until user presses a key so user can see error message
         # end if
-        cv2.namedWindow('Frame',cv2.CV_WINDOW_AUTOSIZE)
-        cv2.namedWindow('Mask',cv2.CV_WINDOW_AUTOSIZE)
-        cv2.startWindowThread()
+        cv2.namedWindow('Frame')
+        cv2.namedWindow('Mask')
+        # cv2.startWindowThread()
+        stabilizer=VidStabilizer()
+        _,prev = camera.read()
+        transform_old = None
         while ((cv2.getWindowProperty('Frame', 0) != -1) or (cv2.getWindowProperty('Mask', 0) != -1)) and cv2.waitKey(1) & 0xFF != ord("q") and camera.isOpened():
             # grab the current frame
             grabbed, frame = camera.read()
-               
+            # Stabilize the video
+            result,transform_old = stabilizer.stabilize(prev,frame,transform_old)
+            prev = frame
             # resize the frame, blur it, and convert it to the HSV
             # color space
             #frame = imutils.resize(frame, width=600)
@@ -296,12 +287,13 @@ class RobotVision():
             try:
                 # show the frame to our screen
                 if(cv2.getWindowProperty('Frame', 0) != -1) or (cv2.getWindowProperty('Mask', 0) !=-1):
-                    cv2.imshow("Frame", frame)
+                    cv2.imshow("Frame", result)
                     cv2.imshow("Mask", mask)
                 else:
+                    print('No frames')
                     break
             except:
-                    break
+                break
 
 
         print("Releasing camera")         
@@ -318,6 +310,62 @@ class RobotVision():
         er = [self.X_er,self.Y_er,self.contour]
         # print er
         return np.array(er)
+
+class VidStabilizer():
+    def stabilize(self,old, frame, transform_old):
+
+
+            # params for ShiTomasi corner detection
+            feature_params = dict( maxCorners = 100,qualityLevel = 0.3,minDistance = 7,blockSize = 7 )
+
+            # Parameters for lucas kanade optical flow
+            lk_params = dict( winSize  = (15,15),
+                              maxLevel = 2,
+                              criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+
+            # Parameters for Farneback optical flow
+            fb_params = { 'pyr_scale'  : 0.5, # 0.5 implies pyramid
+                          'levels'     : 3,
+                          'winSize'    : 15,
+                          'iterations' : 3,
+                          'poly_n'     : 5,
+                          'poly_sigma' : 1.2,
+                          'flags'      : 0}
+            hsv = np.zeros_like(frame)
+            prev = cv2.cvtColor(old, cv2.COLOR_BGR2GRAY)
+            p0 = cv2.goodFeaturesToTrack(prev, mask = None, **feature_params)
+            next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            # calculate optical flow
+            # flow = cv2.calcOpticalFlowFarneback(prev,next,fb_params['pyr_scale'],fb_params['levels'],fb_params['winSize'],fb_params['iterations'],fb_params['poly_n'],fb_params['poly_sigma'],fb_params['flags'])
+            # mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+            # hsv[...,0] = ang*180/np.pi/2
+            # hsv[...,2] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
+            # result = cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR)
+
+            # calculate optical flow
+            p1,st,_ = cv2.calcOpticalFlowPyrLK(prev, next, p0, None, **lk_params)
+            
+            # Select good points
+            good_new = p1[st==1]
+            good_old = p0[st==1]
+            print 'Good points old :-\n',good_old
+            print 'Good points new :-\n',good_new
+            # Get transformation matrix from the optical flow
+            try:
+                transform = cv2.findHomography(good_old,good_new)
+            except:
+                transform = np.eye(3)
+                print('<4 Good points found')
+            try:
+                if transform_old.all() != None:
+                    transform_mean = np.absolute(transform[0]-transform_old)/2
+            except:
+                transform_mean = transform[0]
+            # print 'Mean Transformation:-\n',transform_mean
+            result=cv2.warpPerspective(frame,transform_mean, (frame.shape[1],frame.shape[0]))
+
+            return result,transform_mean
 
 if __name__=='__main__':
     vision = RobotVision()

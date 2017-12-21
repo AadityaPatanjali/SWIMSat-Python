@@ -10,7 +10,7 @@ from PID import PID
 
 class IntegratedVisionControl():
 
-	def __init__(self,delay=0.01,P=4.0,I=0.05,D=0.5,args='/dev/ttyUSB0'):
+	def __init__(self,delay=0.01,P=4.0,I=0.05,D=0.5,args=None):
 		self.tlock = threading.Lock()
 		self.vision = RobotVision()
 		self.transformer = PhantomX()
@@ -89,11 +89,9 @@ class IntegratedVisionControl():
 				return
 
 	def initController(self,args):
-		try:
-			print args
-			port = args
-			self.arm = PhantomXController(port)
-		except IndexError:
+		if args != None:
+			self.arm = PhantomXController(args)
+		else:
 			self.arm = PhantomXController()
 		try:
 			self.arm.getHomePose()
@@ -102,8 +100,8 @@ class IntegratedVisionControl():
 			print('...\nExiting')
 
 if __name__=='__main__':
-	try:
+	if sys.argv[1] != None:
 		system = IntegratedVisionControl(args=sys.argv[1])
-	except:
-		system = IntegratedVisionControl(args=None)
+	else:
+		system = IntegratedVisionControl()
 	system.thread.join()

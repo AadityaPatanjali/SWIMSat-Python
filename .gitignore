@@ -1,3 +1,6 @@
+test.py
+*.cpp
+vid_stab.py
 .gitupload
 *.pyc
 *.ppr
