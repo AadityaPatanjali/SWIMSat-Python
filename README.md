@@ -5,20 +5,21 @@
 Install the following dependencies:
 
 - numpy
-- OpenCV 
+- OpenCV ( Best Version is 2.4, not 3.x)
 - matplotlib
 - Cython
 - scipy 
 - statsmodels
 
 ```
-sudo pip install numpy opencv-python
+sudo pip install opencv-python # Installs opencv 3.x
 sudo pip install --upgrade matplotlib
 sudo pip install cython
 sudo pip install scipy statsmodels
 ```
 
 Note: If any of the above libraries don't get installed on Windows, use [Gohlke's Unofficial Windows Binaries for Python Packages](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
+Note2: If the current version gives errors, use anaconda to install opencv 2.4, by using the menpo channel in conda
 
 ## Instructions to run
 
