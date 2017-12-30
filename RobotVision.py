@@ -1,5 +1,6 @@
 # import the necessary packages
 from collections import deque
+from itertools import islice as slice
 import numpy as np
 import argparse
 import cv2
@@ -13,46 +14,6 @@ import os
 
 
 TRANS_ACC = deque(maxlen=10) # Accumulated transforms
-
-class Trajectory():
-    def __init__(self,x=0,y=0,a=0):
-        self.x = x
-        self.y = y
-        self.a = a # angle
-    def add(self,A,B):
-        C = Trajectory()    
-        try:
-            C.x = A.x+B.x
-            C.y = A.y+B.y
-            C.a = A.a+B.a
-        except:
-            C.x = A.x + B
-            C.y = A.y + B
-            C.a = A.a
-        return C
-    def mul(self,A,B):
-        C = Trajectory()    
-        try:
-            C.x = A.x*B.x
-            C.y = A.y*B.y
-            C.a = A.a*B.a
-        except:
-            C.x = A.x * B
-            C.y = A.y * B
-            C.a = A.a
-        return C
-    def neg(self,A):
-        C = Trajectory()
-        C.x = -A.x
-        C.y = -A.y
-        C.a = -A.a
-        return C
-    def inv(self,A):
-        C = Trajectory()
-        C.x = 1/A.x
-        C.y = 1/A.y
-        C.a = -A.a
-        return C
 
 class RobotVision():
     def __init__(self):
@@ -190,13 +151,12 @@ class RobotVision():
         cv2.namedWindow('Mask')
         # cv2.startWindowThread()
         stabilizer=VidStabilizer()
-        _,prev = camera.read()
+        # _,prev = camera.read()
+        first = 1
         while ((cv2.getWindowProperty('Frame', 0) != -1) or (cv2.getWindowProperty('Mask', 0) != -1)) and cv2.waitKey(1) & 0xFF != ord("q") and camera.isOpened():
             # grab the current frame
-            grabbed, curr_frame = camera.read()
-            # Stabilize the video
-            frame = stabilizer.stabilize(prev,curr_frame)
-            prev = curr_frame
+            grabbed, frame = camera.read()
+            
             # resize the frame, blur it, and convert it to the HSV
             # color space
             #frame = imutils.resize(frame, width=600)
@@ -216,8 +176,11 @@ class RobotVision():
             mask = cv2.inRange(hsv, threshLower, threshUpper)
             mask = cv2.erode(mask, None, iterations=3)
             mask = cv2.dilate(mask, None, iterations=3)
+            if first==1:
+                prev = mask
+                first = 2
 
-                # find contours in the mask and initialize the current
+            # find contours in the mask and initialize the current
             # (x, y) center of the ball
             cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)[-2]
@@ -283,8 +246,9 @@ class RobotVision():
                 self.X_er = X_des - im_x
                 self.Y_er = Y_des - im_y
                 # print(self.X_er,self.Y_er)
-
-                
+                # Stabilize the video
+                frame = stabilizer.stabilize(prev,mask,frame)
+                prev = mask               
                 dt = time.time()-t
             try:
                 # show the frame to our screen
@@ -314,7 +278,7 @@ class RobotVision():
         return np.array(er)
 
 class VidStabilizer():
-    def stabilize(self,old, frame):
+    def stabilize(self,old, frame,color_frame):
             # params for ShiTomasi corner detection
             feature_params = dict( maxCorners = 100,qualityLevel = 0.3,minDistance = 7,blockSize = 7 )
             # Parameters for lucas kanade optical flow
@@ -322,9 +286,11 @@ class VidStabilizer():
                               maxLevel = 2,
                               criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
             hsv = np.zeros_like(frame)
-            prev = cv2.cvtColor(old, cv2.COLOR_BGR2GRAY)
+            # prev = cv2.cvtColor(old, cv2.COLOR_BGR2GRAY)
+            prev = old
             p0 = cv2.goodFeaturesToTrack(prev, mask = None, **feature_params)
-            next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # next = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            next = frame
             # d = np.ones(3)*4e-3
             # n = np.ones(3)*0.25
             try:
@@ -337,26 +303,23 @@ class VidStabilizer():
                 # print 'Good points new :-\n',good_new
                 # Get transformation matrix from the optical flow
                 transform = cv2.findHomography(good_old,good_new)
+                TRANS_ACC.append(transform[0])
+                len_trans = len(TRANS_ACC)
+                # print len_trans,'\n\n'
+                # print deque(slice(TRANS_ACC,1, len_trans))
+                # value1 = deque(slice(TRANS_ACC,1, len_trans))-deque(slice(TRANS_ACC,0, len_trans-1))
+                TRANS_DIFF = deque(slice(TRANS_ACC,1, len_trans))-deque(slice(TRANS_ACC,0, len_trans-1)) if len_trans>2 else np.zeros(shape=(3,3)) if len_trans==1 else TRANS_ACC[1]-TRANS_ACC[0]
+                transform_mean = sum(TRANS_ACC)/len_trans
+                print transform_mean
             except:
-                transform = np.eye(3)
+                transform = np.eye(3) #np.zeros(shape=(3,3))
                 print('<4 Good points found')
-            TRANS_ACC.append(transform[0])
-            # print TRANS_ACC
-            # try:
-            #     if transform_old.all() != None:
-            #         # y = y_new
-            #         # e = e_new + d
-            #         # k = e/(e+n)
-            #         # y_new = y + k*(r-y)
-            #         # e_new = (np.ones(3)-k)*e
-            #         transform_mean = np.absolute(transform[0]+transform_old)/2
-            # except:
-            #     transform_mean = transform[0]
-            # print 'Mean Transformation:-\n',transform_mean
-            transform_mean = sum(TRANS_ACC)/len(TRANS_ACC)
-            print transform_mean
-            result=cv2.warpPerspective(frame,transform_mean, (frame.shape[1],frame.shape[0]))
-
+            
+            try:
+                result=cv2.warpPerspective(color_frame,transform_mean, (frame.shape[1],frame.shape[0]))
+            except Exception as e:
+                print('wrap failed due to <4 Good points found. No worries')
+                result = color_frame
             return result
 
 if __name__=='__main__':

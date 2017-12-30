@@ -196,11 +196,14 @@ class PhantomXController():
 		self.getPose()
 		poseInit = self.convertToAngles()
 		# print "Initial angles: ",poseInit
-		poseFinal = np.zeros(self.numServos,dtype=np.int)
-		poseFinal[self.panIdx] = pan
-		poseFinal[self.tiltIdx] = tilt
+		poseFinal = np.zeros(self.numServos,dtype=np.float)
+		poseFinal[self.panIdx]     = pan  + poseInit[self.panIdx]
+		poseFinal[self.tiltIdx]    = tilt + poseInit[self.tiltIdx]
 		poseFinal[self.gripperIdx] = gripper
-		poseFinal = poseFinal + self.convertToAngles()
+		homeSubtract = np.zeros(self.numServos,dtype=np.float)
+		homeSubtract[self.panIdx] = self.homePose[self.panIdx]
+		homeSubtract[self.tiltIdx] = self.homePose[self.tiltIdx]
+		poseFinal = poseFinal + self.homePose - homeSubtract
 		# time.sleep(5)
 		try:
 			if self.checkPoseValid(poseFinal):
