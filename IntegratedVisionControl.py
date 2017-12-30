@@ -10,7 +10,7 @@ from PID import PID
 
 class IntegratedVisionControl():
 
-	def __init__(self,delay=0.01,P=4.0,I=0.05,D=0.5,args=None):
+	def __init__(self,delay=0.01,P=2.0,I=0.05,D=0.5,args=None):
 		self.tlock = threading.Lock()
 		self.vision = RobotVision()
 		self.transformer = PhantomX()
@@ -52,7 +52,7 @@ class IntegratedVisionControl():
 	def run(self,wait=True):
 		homingCount = 0
 		max_error = 50
-		max_homing_count = 1000
+		max_homing_count = 500
 		while True:
 			if self.exit:
 				self.__del__()
@@ -70,9 +70,9 @@ class IntegratedVisionControl():
 						continue
 				else:
 					print error
-					pan = self.pan.update(error[0]/256.0*2.0)
-					tilt = self.tilt.update(error[1]/256.0*2.0)
-					# print pan,tilt, count
+					pan = self.pan.update(error[0]/256.0*1.0)
+					tilt = self.tilt.update(error[1]/256.0*1.0)
+					print pan,tilt
 					if wait:
 						self.tlock.acquire()
 					self.arm.move(pan,tilt,interpolate=False)

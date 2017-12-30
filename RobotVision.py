@@ -141,7 +141,7 @@ class RobotVision():
         Y_T = pd.Series()
         # pts = deque(maxlen=args["buffer"])
 
-        camera = cv2.VideoCapture(1)
+        camera = cv2.VideoCapture(0)
 
         if camera.isOpened() == False:               # check if VideoCapture object was associated to webcam successfully
             print "error: camera not accessed successfully\n\n"      # if not, print error message to std out
