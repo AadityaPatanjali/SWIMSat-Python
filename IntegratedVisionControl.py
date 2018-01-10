@@ -14,7 +14,6 @@ class IntegratedVisionControl():
 		self.tlock = threading.Lock()
 		self.vision = RobotVision()
 		self.transformer = PhantomX()
-		self.initController(args)
 		self.threadImage = Thread(target=self.runImage)
 		self.curr_time = None
 		self.setDelay(delay)
@@ -24,10 +23,11 @@ class IntegratedVisionControl():
 		self.tilt = PID(P,I,D)
 		self.exit = False
 		self.thread = Thread(target=self.run)
-		# self.threadImage.start()
+		self.threadImage.start()
+		self.initController(args)
 		# print('ThreadImage executed')
 		self.thread.start()
-		self.runImage()
+		# self.runImage()
 
 	def __del__(self):
 		self.exit = True

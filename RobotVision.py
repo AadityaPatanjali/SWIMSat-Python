@@ -85,11 +85,17 @@ class RobotVision():
         X_Current = X_Current[-Tr_l:]
         Y_Current = Y_Current[-Tr_l:]
         Time_set_fin = Time_set[-Tr_l:]
-        X_Set = seasonal_decompose(X_Current, model='additive', freq = 13)
-        Y_Set = seasonal_decompose(Y_Current, model='additive', freq = 13)
+        X_Set = seasonal_decompose(X_Current, model='additive', freq = 2)
+        Y_Set = seasonal_decompose(Y_Current, model='additive', freq = 2)
         return X_Set, Y_Set, Time_set_fin
 
     def main(self):
+        x_sh = 0
+        y_sh = 0
+        X_old = 0
+        Y_old = 0
+        X_older = 0
+        Y_older = 0
         ct = 0
         c = 0
         t = 0
@@ -97,14 +103,19 @@ class RobotVision():
         net_err = 0
         X_traj = np.empty((0,1))
         Y_traj = np.empty((0,1))
+        X_traj_sh = np.empty((0,1))
+        Y_traj_sh = np.empty((0,1))
         Time_Vec = np.empty((0,1))
         tim = np.empty((0,1))
         X_pr = np.array([])
         Y_pr = np.array([])
 
         X_Trend = np.empty((0,1))
-        Y_Trend = np.empty((0,1))
-
+        Y_Trend = np.empty((0,1))                
+        x_sh = 0
+        y_sh = 0
+        x_netsh = 0
+        y_netsh = 0
 
         X_las = None
         Y_las = None
@@ -128,9 +139,9 @@ class RobotVision():
         thickness = 3
 
         ## Regression Parameters
-        Tr_len= 35
-        Pred_len = 15
-        poly_ord = 2
+        Tr_len= 6  #35
+        Pred_len = 6 #15
+        poly_ord = 1
 
         # Should you track ?
         tr_fl = False
@@ -175,7 +186,7 @@ class RobotVision():
             # blobs left in the mask
             mask = cv2.inRange(hsv, threshLower, threshUpper)
             mask = cv2.erode(mask, None, iterations=3)
-            mask = cv2.dilate(mask, None, iterations=3)
+            mask = cv2.dilate(mask, None, iterations=5)
             if first==1:
                 prev = mask
                 first = 2
@@ -195,15 +206,27 @@ class RobotVision():
                 cen2 = None
                 X_las = None
                 Y_las = None
+                X_old = 0
+                Y_old = 0
+                X_older = 0
+                Y_older = 0
+                X_off = 0
+                Y_off = 0
                 net_err = 0
                 X_traj = np.empty((0,1))
-                Y_Traj = np.empty((0,1))
+                Y_traj = np.empty((0,1))
+                X_traj_sh = np.empty((0,1))
+                Y_traj_sh = np.empty((0,1))
                 Time_Vec = np.empty((0,1))
                 X_Trend = np.empty((0,1))
                 Y_Trend = np.empty((0,1))
                 Traj_hist = None
                 X_pr = np.empty((0,1))
                 Y_pr = np.empty((0,1))
+                x_sh = 0
+                y_sh = 0
+                x_netsh = 0
+                y_netsh = 0
 
                 tim = None
                 tr_fl = False
@@ -227,19 +250,48 @@ class RobotVision():
                 #pts.appendleft(cen)
                     # loop over the set of tracked points
                 pts.appendleft(cen)
-                for i in xrange(1, len(pts)):
-                        if pts[i] is  not None:
-                            cv2.line(frame, pts[i - 1], pts[i], (0,255, 0), thickness)
-                                        
+                #for i in xrange(1, len(pts)):
+                 #       if pts[i] is  not None:
+                  #          cv2.line(frame, pts[i - 1], pts[i], (0,255, 0), thickness)
+                            #cv2.line(frame, pts[i - 1], pts[i], (0,255, 0), thickness)
+
                 if X_des is not None and Y_des is not None:
                     t = time.time() - t0
                     Time_Vec = np.vstack([Time_Vec, t])
+                    if len(X_traj) > 2:
+                    	X_old = X_traj[len(X_traj)-1]
+                    	Y_old = Y_traj[len(Y_traj)-1]
+                    	X_older = X_traj[len(X_traj)-2]
+                    	Y_older = Y_traj[len(Y_traj)-2]
+
+                    x_sh= X_old-X_older
+                    y_sh= Y_old-Y_older
+                    x_netsh= x_netsh + x_sh
+                    y_netsh= y_netsh + y_sh
+                    X_off= X_des + x_netsh
+                    Y_off= Y_des + y_netsh
+
                     X_traj = np.vstack( [X_traj, X_des] )
                     Y_traj = np.vstack( [Y_traj, Y_des] )
+                    X_traj_sh = np.vstack( [X_traj_sh, X_off] )
+                    Y_traj_sh = np.vstack( [Y_traj_sh, Y_off] )
+
                     
-                if len(X_traj) > Tr_len:
+                if len(X_traj) > Tr_len:					
+                    #print(' Acquiring trajectory...')
                     if tr_fl is False:
+                        #X_pr, Y_pr = self.Get_Traj(X_traj_sh,Y_traj_sh, Tr_len, poly_ord, Time_Vec, Pred_len)
                         X_pr, Y_pr = self.Get_Traj(X_traj,Y_traj, Tr_len, poly_ord, Time_Vec, Pred_len)
+                        #print(' Trajectory acquired.')
+
+                        for c in np.arange(1,len(X_traj_sh)):
+                            #cv2.line(frame, (int(X_traj_sh[c - 1]), int(Y_traj_sh[c - 1])),  (int(X_traj_sh[c]), int(Y_traj_sh[c])), (0,255, 0), thickness)
+                            cv2.line(frame, (int(X_traj[c - 1]), int(Y_traj[c - 1])),  (int(X_traj[c]), int(Y_traj[c])), (0,255, 0), thickness)
+
+
+                        #cv2.line(frame, (int(X_traj_sh[len(X_traj_sh)-1]), int(Y_traj_sh[len(Y_traj_sh)-1])), (int(X_pr[0]), int(Y_pr[0])), (0,0, 255), thickness)
+                        cv2.line(frame, (int(X_traj[len(X_traj)-1]), int(Y_traj[len(Y_traj)-1])), (int(X_pr[0]), int(Y_pr[0])), (0,0, 255), thickness)
+
                         for c in np.arange(1,len(X_pr)):
                             cv2.line(frame, (int(X_pr[c - 1]), int(Y_pr[c - 1])), (int(X_pr[c]), int(Y_pr[c])), (0,0, 255), thickness)
                             tr_fl = False    
@@ -247,8 +299,8 @@ class RobotVision():
                 self.Y_er = Y_des - im_y
                 # print(self.X_er,self.Y_er)
                 # Stabilize the video
-                frame = stabilizer.stabilize(prev,mask,frame)
-                prev = mask               
+                #frame = stabilizer.stabilize(prev,mask,frame)
+                #prev = mask               
                 dt = time.time()-t
             try:
                 # show the frame to our screen
@@ -310,15 +362,15 @@ class VidStabilizer():
                 # value1 = deque(slice(TRANS_ACC,1, len_trans))-deque(slice(TRANS_ACC,0, len_trans-1))
                 TRANS_DIFF = deque(slice(TRANS_ACC,1, len_trans))-deque(slice(TRANS_ACC,0, len_trans-1)) if len_trans>2 else np.zeros(shape=(3,3)) if len_trans==1 else TRANS_ACC[1]-TRANS_ACC[0]
                 transform_mean = sum(TRANS_ACC)/len_trans
-                print transform_mean
+                #print transform_mean
             except:
                 transform = np.eye(3) #np.zeros(shape=(3,3))
-                print('<4 Good points found')
+                #print('<4 Good points found')
             
             try:
                 result=cv2.warpPerspective(color_frame,transform_mean, (frame.shape[1],frame.shape[0]))
             except Exception as e:
-                print('wrap failed due to <4 Good points found. No worries')
+                #print('wrap failed due to <4 Good points found. No worries')
                 result = color_frame
             return result
 

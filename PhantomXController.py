@@ -23,6 +23,7 @@ class PhantomXController():
 		self.setTilt(tilt)
 		self.setGripper(gripper)
 		self.homePose = None
+		self.ptLimits = None
 		self.setPoseLimits()
 		self.setInterpolation()
 
@@ -96,14 +97,26 @@ class PhantomXController():
 		self.gripperIdx = gripper
 
 	def setPoseLimits(self):
-		self.qmax = np.ones(self.numServos)*pi
-		self.qmin = np.ones(self.numServos)*(-pi)
+		self.qmax = np.ones(self.numServos)*180
+		self.qmin = np.ones(self.numServos)*(-180)
+
+	def setPTLimits(self,limits):
+		self.qmin[self.panIdx] = limits[0]
+		self.qmax[self.panIdx] = limits[1]
+		self.qmin[self.tiltIdx] = limits[2]
+		self.qmax[self.tiltIdx] = limits[3]
 
 	def checkPoseValid(self,pose):
-		if np.sum(pose[0:len(pose)-1])<pi:
+		mini = pose[0:len(pose)-1] >= self.qmin[0:len(pose)-1]
+		maxi = pose[0:len(pose)-1] <= self.qmax[0:len(pose)-1]
+		print 'Mini and Maxi:',mini,maxi
+		print 'Pose now:',pose[0:len(pose)-1]
+		print 'qmin:',self.qmin[0:len(pose)-1]
+		print 'qmax:',self.qmax[0:len(pose)-1]
+		if (np.sum(maxi) == self.numServos-1) & (np.sum(mini)==self.numServos-1):
+			# print 'Min and max:',np.sum(mini),np.sum(maxi)
 			return True
-		else:
-			return False
+		else: return False
 
 	def doRelax(self):
 		""" Relax servos so you can pose them. """
@@ -197,8 +210,8 @@ class PhantomXController():
 		poseInit = self.convertToAngles()
 		# print "Initial angles: ",poseInit
 		poseFinal = np.zeros(self.numServos,dtype=np.float)
-		poseFinal[self.panIdx]     = pan  + poseInit[self.panIdx]
-		poseFinal[self.tiltIdx]    = tilt + poseInit[self.tiltIdx]
+		poseFinal[self.panIdx]	 = pan  + poseInit[self.panIdx]
+		poseFinal[self.tiltIdx]	= tilt + poseInit[self.tiltIdx]
 		poseFinal[self.gripperIdx] = gripper
 		homeSubtract = np.zeros(self.numServos,dtype=np.float)
 		homeSubtract[self.panIdx] = self.homePose[self.panIdx]
@@ -246,6 +259,93 @@ class PhantomXController():
 		else:
 			self.setHomePose(interpolate)
 
+	def getPTLimits(self):
+		# self.relaxServos()
+		inp = raw_input('Do you want to reset the pan and tilt limits? y/n:').lower()
+		if inp == 'n':
+			if self.ptLimits == None:
+					try:
+						file = open("PTLimits",'r')
+						line = file.read()
+						self.ptLimits = np.int_(line.strip('[]').rstrip('\n').rstrip(' ').rstrip(']').split(','))
+					except IOError:
+						print "Pan Tilt limits not set yet.\n"
+						self.ptLimits = self.askToSetPTLimits()
+					except ValueError:
+						self.ptLimits = np.array(line.strip('[]').rstrip('\n').rstrip(' ').rstrip(']').split()).astype(np.float)
+
+			else: self.setPTLimits(self.ptLimits)
+		else:
+			self.ptLimits = self.askToSetPTLimits() 
+		self.setPTLimits(self.ptLimits)
+		print "Pan and Tilt limits are: ", self.ptLimits
+
+	def askToSetPTLimits(self):
+		self.relaxServos()
+		while True:
+			try:
+				self.getPose()
+				pose = self.convertToAngles()
+				pan = pose[self.panIdx]
+				print 'Set pan min'
+				print (pan)
+				time.sleep(0.5)
+			except KeyboardInterrupt:
+				break
+		print "Setting pan min to:",pan
+		pan_min = pan
+
+		while True:
+			try:
+				self.getPose()
+				pose = self.convertToAngles()
+				pan = pose[self.panIdx]
+				print 'Set pan max'
+				print (pan)
+				time.sleep(0.5)
+			except KeyboardInterrupt:
+				break
+		print "Setting pan max to:",pan
+		pan_max = pan
+
+		while True:
+			try:
+				self.getPose()
+				pose = self.convertToAngles()
+				tilt = pose[self.tiltIdx]
+				print 'Set tilt min'
+				print (tilt)
+				time.sleep(0.5)
+			except KeyboardInterrupt:
+				break
+		print "Setting tilt min to:",tilt
+		tilt_min = tilt
+
+		while True:
+			try:
+				self.getPose()
+				pose = self.convertToAngles()
+				tilt = pose[self.tiltIdx]
+				print 'Set tilt max'
+				print (tilt)
+				time.sleep(0.5)
+			except KeyboardInterrupt:
+				break
+		print "Setting tilt max to:",tilt
+		tilt_max = tilt
+		limits = np.array([pan_min,pan_max,tilt_min,tilt_max])
+		inp = raw_input("Ok? Y/N:").lower()
+		if inp == "y":
+			file = open('PTLimits','w')
+			file.write(str(limits))
+			file.close()
+			print "Pan Tilt Limits set!"
+			return limits
+		elif inp == "n":
+			return self.askToSetPTLimits()
+		else:
+			return self.askToSetPTLimits()
+
 	def getHomePose(self,interpolate = False):
 		# self.relaxServos()
 		if self.homePose == None:
@@ -268,7 +368,7 @@ class PhantomXController():
 			inp = raw_input("Do you want reset the home pos? Y/N:").lower()
 			while inp == 'y':
 				if inp == 'y':
-					self.setHomePose()
+					self.getPTLimits()
 					return
 				elif inp == 'n':
 					print "Goodbye!"
@@ -277,6 +377,7 @@ class PhantomXController():
 					inp = raw_input("Do you want reset the home pos? Y/N:").lower()
 		else:
 			self.getHomePose(interpolate)
+		self.getPTLimits()
 
 	def setZeroPose(self):
 		self.setPoseInAngles(np.zeros(5))
