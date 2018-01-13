@@ -52,7 +52,7 @@ or by modifying the 'Image Threshold' file. Open it in any text editor, but don'
 [H_upper,S_upper,V_upper,H_lower,S_lower,V_lower]
 ``` 
 where H, S and, V stand for Hue, Saturation and, Value respectively.
-- To close the program, 
+- To close the program do any of the following, 
   - Close Frame, if in a linux machine.
   - Press q while the Frame window is active, if in a windows machine
   - Interrupt the program by pressing  Ctrl + C in ther terminal and wait for the program to show the Goodbye message
