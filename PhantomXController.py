@@ -7,6 +7,7 @@ import time
 from ax12 import *
 from driver import Driver
 from math import pi
+from operator import itemgetter
 
 class PhantomXController():
 
@@ -97,24 +98,30 @@ class PhantomXController():
 		self.gripperIdx = gripper
 
 	def setPoseLimits(self):
-		self.qmax = np.ones(self.numServos)*180
-		self.qmin = np.ones(self.numServos)*(-180)
+		self.qmax = np.ones(self.numServos)*175
+		self.qmin = np.ones(self.numServos)*(-175)
 
 	def setPTLimits(self,limits):
 		self.qmin[self.panIdx] = limits[0]
 		self.qmax[self.panIdx] = limits[1]
 		self.qmin[self.tiltIdx] = limits[2]
 		self.qmax[self.tiltIdx] = limits[3]
+		self.qmin = (self.qmin + 360.0)%360.0
+		self.qmax = (self.qmax + 360.0)%360.0
+		self.qmin = np.array([ele if ele<=180.0 else ele-360 for ele in self.qmin])
+		self.qmax = np.array([ele if ele<=180.0 else ele-360 for ele in self.qmax])
 
 	def checkPoseValid(self,pose):
-		mini = pose[0:len(pose)-1] >= self.qmin[0:len(pose)-1]
-		maxi = pose[0:len(pose)-1] <= self.qmax[0:len(pose)-1]
-		print 'Mini and Maxi:',mini,maxi
-		print 'Pose now:',pose[0:len(pose)-1]
-		print 'qmin:',self.qmin[0:len(pose)-1]
-		print 'qmax:',self.qmax[0:len(pose)-1]
-		if (np.sum(maxi) == self.numServos-1) & (np.sum(mini)==self.numServos-1):
-			# print 'Min and max:',np.sum(mini),np.sum(maxi)
+		pose = (pose + 360.0)%360.0
+		pose = np.array([ele if ele<=180.0 else ele-360 for ele in pose])
+		mini = pose >= self.qmin
+		maxi = pose <= self.qmax
+		# print 'Mini and Maxi:',mini,maxi
+		# print 'Pose now:',pose[0:len(pose)-1]
+		# print 'qmin:',self.qmin[0:len(pose)-1]
+		# print 'qmax:',self.qmax[0:len(pose)-1]
+		# print 'NumServos, Min and max:',self.numServos,np.sum(mini),np.sum(maxi)
+		if ((np.sum(maxi) >= self.numServos) & (np.sum(mini)>=self.numServos)):
 			return True
 		else: return False
 
@@ -128,10 +135,17 @@ class PhantomXController():
 			print "Port not selected."
 			self.doPort()
 
-	def relaxServos(self):
+	def relaxServos(self,servoRange = None):
+		servoRange = range(self.numServos) if servoRange is None else servoRange
+		inp = raw_input(servoRange)
 		""" Relax or enable a servo. """
-		for servo in range(self.numServos):
-			self.port.setReg(servo+1, P_TORQUE_ENABLE, [0,])
+		try:
+			for servo in servoRange:
+				self.port.setReg(servo+1, P_TORQUE_ENABLE, [0,])
+		except ValueError:
+			for servo in servoRange[0,len(servoRange)-1]:
+				self.port.setReg(servo+1, P_TORQUE_ENABLE, [0,])
+		
 
 	def enableServos(self):
 		for servo in range(self.numServos):
@@ -177,9 +191,15 @@ class PhantomXController():
 			flat_pose = [item for sublist in pose for item in sublist]
 			print "Moving slowly", flat_pose
 			self.moveWithInterpolation(flat_pose)
-		else:	
-			for servo in range(self.numServos):
-				self.port.setReg(servo+1, P_GOAL_POSITION_L, pose[servo].tolist())
+		else:
+			try:
+				for servo in range(self.numServos):
+					self.port.setReg(servo+1, P_GOAL_POSITION_L, pose[servo].tolist())
+			except ValueError:
+				# Gripper not found
+				for servo in range(self.numServos-1):
+					self.port.setReg(servo+1, P_GOAL_POSITION_L, pose[servo].tolist())
+
 
 	def setPoseInAngles(self,pose,interpolate=False):
 		self.setPose(self.convertToPose(pose),interpolate)
@@ -281,7 +301,9 @@ class PhantomXController():
 		print "Pan and Tilt limits are: ", self.ptLimits
 
 	def askToSetPTLimits(self):
-		self.relaxServos()
+		relaxServos = range(self.numServos)
+		relaxServos = itemgetter(*[self.panIdx,self.tiltIdx])(relaxServos)
+		self.relaxServos(relaxServos)
 		while True:
 			try:
 				self.getPose()
@@ -356,6 +378,7 @@ class PhantomXController():
 			except IOError:
 				print "Home Position not set yet.\n"
 				self.setHomePose()
+				self.getPTLimits()
 				return
 			except ValueError:
 				self.homePose = np.array(line.strip('[]').rstrip('\n').rstrip(' ').rstrip(']').split()).astype(np.float)
@@ -368,8 +391,8 @@ class PhantomXController():
 			inp = raw_input("Do you want reset the home pos? Y/N:").lower()
 			while inp == 'y':
 				if inp == 'y':
-					self.getPTLimits()
-					return
+					self.setHomePose(interpolate)
+					break
 				elif inp == 'n':
 					print "Goodbye!"
 					break
