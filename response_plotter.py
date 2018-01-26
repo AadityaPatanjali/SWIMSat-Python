@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
-	file = open('Response.txt','r')
+	# file = open('Response.txt','r')
+	file = open('Object_center.txt','r')
 	line = file.read()
 	file.close()
 	var = np.int_([ele.rstrip('])') for ele in [ele.strip(' array([') for ele in (line.strip('[]').split(','))]])
@@ -13,11 +14,13 @@ def main():
 	plt.axis([0,var_len,np.min(var_new),np.max(var_new)])
 	plt.grid(True)
 	plt.xlabel('Sample')
-	plt.ylabel('Pixel Difference')
-	plt.title('System Error Plot')
+	plt.ylabel('Pixel Value')
+	# plt.title('System Error Plot')
+	plt.title('Object Position with time')
 	plt.legend(['x','y'])
 
-	file = open('ActualPosOfObj.txt','r')
+	# file = open('ActualPosOfObj.txt','r')
+	file = open('Camera_center.txt','r')
 	line = file.read()
 	file.close()
 	var = np.int_([ele.rstrip('])') for ele in [ele.strip(' array([') for ele in (line.strip('[]').split(','))]])
@@ -28,8 +31,9 @@ def main():
 	plt.axis([0,var_len,np.min(var_new),np.max(var_new)])
 	plt.grid(True)
 	plt.xlabel('Sample')
-	plt.ylabel('Pixel Difference')
-	plt.title('Actual Position Plot')
+	plt.ylabel('Pixel Value')
+	# plt.title('Actual Position Plot')
+	plt.title('Camera Position with time')
 	plt.legend(['x','y'])
 
 	f.show()

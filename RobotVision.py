@@ -20,6 +20,8 @@ class RobotVision():
         style.use('fivethirtyeight')
         self.X_er = 0
         self.Y_er = 0
+        self.X_des = 0
+        self.Y_des = 0
         self.contour = False
     ## This Code tracks the trajectory based on a polynomial regression
 
@@ -245,7 +247,7 @@ class RobotVision():
                 X_des = x+(w/2)
                 Y_des = y+(h/2)
                 cen = (X_des, Y_des)
-                m_r=3
+                m_r=1
                 cv2.circle(frame,cen, m_r, (0,255,0), -1)
                 #pts.appendleft(cen)
                     # loop over the set of tracked points
@@ -297,6 +299,8 @@ class RobotVision():
                             tr_fl = False    
                 self.X_er = X_des - im_x
                 self.Y_er = Y_des - im_y
+                self.X_des = X_des
+                self.Y_des = Y_des
                 # print(self.X_er,self.Y_er)
                 # Stabilize the video
                 #frame = stabilizer.stabilize(prev,mask,frame)
@@ -328,6 +332,11 @@ class RobotVision():
         er = [self.X_er,self.Y_er,self.contour]
         # print er
         return np.array(er)
+
+    def getObjPos(self):
+        pos = [self.X_des,self.Y_des,self.contour]
+        # print pos
+        return np.array(pos)
 
 class VidStabilizer():
     def stabilize(self,old, frame,color_frame):

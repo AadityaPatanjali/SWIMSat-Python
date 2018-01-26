@@ -10,7 +10,7 @@ from PID import PID
 
 class IntegratedVisionControl():
 
-	def __init__(self,delay=0.01,P=2.0,I=0.05,D=0.5,args=None):
+	def __init__(self,delay=0.01,P=4.0,I=0.05,D=0.5,args=None):
 		self.tlock = threading.Lock()
 		self.vision = RobotVision()
 		self.transformer = PhantomX()
@@ -32,10 +32,10 @@ class IntegratedVisionControl():
 	def __del__(self):
 		self.exit = True
 		print "exit = ", self.exit
-		file = open('Response.txt','w')
+		file = open('Camera_center.txt','w')
 		file.write(str(self.out))
 		file.close()
-		file = open('ActualPosOfObj.txt','w')
+		file = open('Object_center.txt','w')
 		file.write(str(self.out2))
 		file.close()
 		self.arm.__del__()
@@ -61,7 +61,8 @@ class IntegratedVisionControl():
 				# print np.where(max(error)>max_error)
 				time.sleep(self.delay)
 				error = self.vision.getError()
-				self.out.append(error)
+				objPos = self.vision.getObjPos()
+				self.out.append(objPos)
 				if not error[2]:
 					homingCount +=1
 					if homingCount >= max_homing_count:
