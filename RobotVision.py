@@ -22,6 +22,10 @@ class RobotVision():
         self.Y_er = 0
         self.X_des = 0
         self.Y_des = 0
+        self.X_pred = 0
+        self.Y_pred = 0
+        self.X_traj = 0
+        self.Y_traj = 0
         self.contour = False
     ## This Code tracks the trajectory based on a polynomial regression
 
@@ -301,6 +305,18 @@ class RobotVision():
                 self.Y_er = Y_des - im_y
                 self.X_des = X_des
                 self.Y_des = Y_des
+                try:
+                    self.X_pred = float(X_pr[0])
+                    self.Y_pred = float(Y_pr[0])
+                except:
+                    self.X_pred = 0
+                    self.Y_pred = 0
+                try:
+                    self.X_hist = float(X_traj[len(X_traj)])
+                    self.Y_hist = float(Y_traj[len(Y_traj)])
+                except:
+                    self.X_hist = 0
+                    self.Y_hist = 0
                 # print(self.X_er,self.Y_er)
                 # Stabilize the video
                 #frame = stabilizer.stabilize(prev,mask,frame)
@@ -335,6 +351,16 @@ class RobotVision():
 
     def getObjPos(self):
         pos = [self.X_des,self.Y_des,self.contour]
+        # print pos
+        return np.array(pos)
+
+    def getPredTraj(self):
+        pos = [self.X_pred,self.Y_pred,self.contour]
+        # print pos
+        return np.array(pos)
+
+    def getTrajHist(self):
+        pos = [self.X_traj,self.Y_traj,self.contour]
         # print pos
         return np.array(pos)
 

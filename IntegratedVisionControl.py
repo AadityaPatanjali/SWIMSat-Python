@@ -18,6 +18,7 @@ class IntegratedVisionControl():
 		self.curr_time = None
 		self.setDelay(delay)
 		self.out = []
+		self.out1 = []
 		self.out2 = []
 		self.pan = PID(P,I,D)
 		self.tilt = PID(P,I,D)
@@ -32,15 +33,17 @@ class IntegratedVisionControl():
 	def __del__(self):
 		self.exit = True
 		print "exit = ", self.exit
-		file = open('Camera_center.txt','w')
-		file.write(str(self.out))
-		file.close()
-		file = open('Object_center.txt','w')
-		file.write(str(self.out2))
-		file.close()
+		self.write('Response.txt',self.out)
+		self.write('PredTraj.txt',self.out1)
+		self.write('TrajHist.txt',self.out2)
 		self.arm.__del__()
 		print('Goodbye!')
 		sys.exit()
+
+	def write(self,fileName,out):
+		file = open(fileName,'w')
+		file.write(str(out))
+		file.close()
 
 	def runImage(self):
 		self.vision.main()
@@ -62,7 +65,11 @@ class IntegratedVisionControl():
 				time.sleep(self.delay)
 				error = self.vision.getError()
 				objPos = self.vision.getObjPos()
-				self.out.append(objPos)
+				pred = self.vision.getPredTraj()
+				hist = self.vision.getTrajHist()
+				self.out1.append(pred)
+				self.out2.append(hist)
+				self.out.append(error)
 				if not error[2]:
 					homingCount +=1
 					if homingCount >= max_homing_count:
@@ -84,7 +91,7 @@ class IntegratedVisionControl():
 				theta = self.arm.convertToAngles()
 				pe_base = np.array(np.dot(self.transformer.Te0(theta[0:4]),pe))
 				pe_base = [int(ele) for ele in np.concatenate((pe_base[0,0:2],[err]))] 
-				self.out2.append(pe_base)
+				# self.out2.append(pe_base)
 			except KeyboardInterrupt:
 				self.__del__()
 				return
